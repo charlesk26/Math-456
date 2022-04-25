@@ -1,0 +1,94 @@
+---
+title: "Project-2"
+author: "Group 1"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Import Libraries
+
+```{r}
+library(plotly)
+library(car)
+library(caret)
+library(ggplot2)
+library(scales)
+library(tidyverse)
+library(dplyr)
+library(olsrr)
+
+```
+
+```{r}
+
+
+df <- read.csv("data/stature_hand_foot.csv")
+# as.data.frame(lapply(df, as.numeric))
+
+#ggplot(df, aes(x = median_income, y = median_house_value))+geom_point()
+# scale_y_continuous(labels = label_number(suffix = " M", scale = 1e-6))
+head(df, 10)
+
+```
+#Visualizing the data (in 3D)
+```{r}
+p <- plot_ly(
+  df, x = ~hand_length, y = ~foot_length, z = ~height, 
+  color = ~height, colors = c('#BF382A', '#0C4B8E')
+  ) %>%
+  add_markers() %>%
+  layout(
+    scene = list(xaxis = list(title = 'Hand Len'),
+        yaxis = list(title = 'Foot Len'),
+        zaxis = list(title = 'Height'))
+        )
+p
+```
+
+
+```{r}
+model1 <- lm(formula = height ~ hand_length + foot_length, data = df)
+model1
+summary(model1)
+confint(model1)
+```
+
+#Normal Q-Q Plot
+
+```{r}
+ols_plot_resid_qq(model1)
+```
+
+#Residual Fitted Plot
+
+```{r}
+ols_plot_resid_fit(model1)
+```
+#Histogram of Residuals 
+```{r}
+ols_plot_resid_hist(model1)
+```
+#Testing the Model 5-fold CV
+```{r}
+ctrl <- trainControl(method = "cv", number = 5)
+
+model <- train(height ~ hand_length + foot_length, data = df, method = "lm", trControl = ctrl)
+              
+print(model)
+
+model$finalModel
+
+model$resample
+```
+#Testing the Model LOOCV
+```{r}
+ctrl <- trainControl(method = "LOOCV")
+
+loocv <- train(height ~ hand_length + foot_length, data = df, method = "lm", trControl = ctrl)
+              
+print(loocv)
+```
